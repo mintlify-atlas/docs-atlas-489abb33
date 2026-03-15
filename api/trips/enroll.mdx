@@ -1,0 +1,46 @@
+---
+title: "Enroll in Trip"
+description: "Enroll the currently authenticated user in a trip."
+---
+
+## Endpoint
+
+`POST /viatge/trips/{id}/enroll`
+
+Adds the currently authenticated user to the participant list of the specified trip.
+
+## Authentication
+
+Required. Send a valid Bearer token in the `Authorization` header.
+
+## Request
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the trip to enroll in.
+</ParamField>
+
+No request body.
+
+## Response
+
+Returns the result of the enrollment operation. The exact shape depends on the CRUD layer, but a successful enrollment confirms the user has been added.
+
+## Example
+
+```bash
+curl -X POST http://localhost:8000/viatge/trips/1/enroll \
+  -H "Authorization: Bearer <access_token>"
+```
+
+```json
+{
+  "message": "Inscripció correcta"
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `400 Bad Request` | _(varies)_ | Enrollment failed — e.g. already enrolled, trip full, or trip not found. |
+| `401 Unauthorized` | `Token no vàlid` | The token is missing, malformed, or expired. |

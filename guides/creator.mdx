@@ -1,0 +1,145 @@
+---
+title: "Creator guide"
+description: "A complete guide for Creador users — creating and editing trips, managing participants, and understanding trip statuses."
+---
+
+The **Creador** (Creator) role gives you the ability to publish and manage group trips on TravelConnect. This guide covers how to become a Creator and everything you can do once you have that role.
+
+<Note>
+  Creators retain all Traveler capabilities. Everything in the [Traveler guide](/guides/traveler) applies to you as well.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Become a Creator" icon="arrow-up" href="#becoming-a-creator">
+    Request a promotion from the `/promotion` page
+  </Card>
+  <Card title="Create a trip" icon="plus" href="#creating-a-new-trip">
+    Publish a new trip at `/trips/create`
+  </Card>
+  <Card title="Edit a trip" icon="pencil" href="#editing-an-existing-trip">
+    Update trip details at `/trips/:id/edit`
+  </Card>
+  <Card title="Manage participants" icon="users" href="#managing-participants">
+    View enrolled travelers from the trip detail page
+  </Card>
+</CardGroup>
+
+## Becoming a Creator
+
+All new accounts start as `Viatger`. To unlock trip creation, you need the `Creador` role, which an Admin must grant.
+
+<Steps>
+  <Step title="Submit a promotion request">
+    Navigate to `/promotion` (only accessible with the `Viatger` role). Write a justification in the **Justificación / Motivación** field explaining why you want to create trips. Click **Enviar Solicitud**.
+
+    The frontend sends `POST /viatge/promote-request` with body `{ "missatge": "your message" }`. A promotion request record is created and placed in a `pendent` (pending) state.
+  </Step>
+  <Step title="Wait for admin review">
+    An Admin reviews your request from the `/admin/requests` panel. They can approve (`aprovat`) or reject (`denegat`) it.
+  </Step>
+  <Step title="Role is updated">
+    If your request is approved, the Admin also changes your role to `Creador` via `PUT /admin/users/{user_id}/promote` with `{ "new_rol": "Creador" }`. Log out and log back in to receive a new JWT that reflects your updated role.
+  </Step>
+</Steps>
+
+<Warning>
+  Approving the promotion request and updating your role are two separate admin actions. Your role does **not** change automatically when the request is approved — the admin must also explicitly change it.
+</Warning>
+
+## Creating a new trip
+
+Once you have the `Creador` role, the **+ Crear Nuevo Viaje** button appears on the `/dashboard` page.
+
+<Steps>
+  <Step title="Open the create trip page">
+    Click **+ Crear Nuevo Viaje** on the dashboard, or navigate directly to `/trips/create`.
+  </Step>
+  <Step title="Fill in the trip details">
+    Complete all required fields:
+
+    | Field | Internal name | Description |
+    |-------|---------------|-------------|
+    | **Nombre del Viaje** | `nom` | The name of the trip (required) |
+    | **Descripción** | `descripcio` | A description of the experience (required, textarea) |
+    | **Destino** | `desti` | The destination location (required) |
+    | **Fecha Inicio** | `data_inici` | Trip start date, format `YYYY-MM-DD` (required) |
+    | **Fecha Final** | `data_fi` | Trip end date, format `YYYY-MM-DD` (required) |
+    | **Capacidad Máxima** | `maxim_participants` | Maximum number of participants (defaults to `10`) |
+    | **Estado** | `estat` | Initial trip status (defaults to `Planificant`) |
+  </Step>
+  <Step title="Publish the trip">
+    Click **Publicar Viaje**. The frontend sends `POST /creadorViatges/creator/trips` with your form data. `maxim_participants` is cast to an integer before submission. On success, you are redirected to `/dashboard`.
+  </Step>
+</Steps>
+
+<Tip>
+  Set the initial status to `Planificant` when the trip is open for enrollment. You can update the status later from the edit page.
+</Tip>
+
+## Trip status options
+
+Every trip has an `estat` field that you control. Choose the status that reflects the current stage of your trip.
+
+| Status | Value | When to use |
+|--------|-------|-------------|
+| Planning | `Planificant` | The trip is being organized and is open for enrollment |
+| Active | `Actiu` | The trip is currently underway |
+| Complete | `Complet` | The trip has finished |
+| Cancelled | `Cancel·lat` | The trip has been called off |
+
+The expected lifecycle is:
+
+```
+Planificant → Actiu → Complet
+     ↓
+ Cancel·lat
+```
+
+<Warning>
+  There is no automatic status transition. You must update the `estat` field manually from the edit page as the trip progresses.
+</Warning>
+
+## Editing an existing trip
+
+You can edit any trip you created. Admins can edit any trip on the platform.
+
+<Steps>
+  <Step title="Open the trip detail page">
+    Navigate to `/trips/:id` for the trip you want to update.
+  </Step>
+  <Step title="Click Editar Viaje">
+    The **Editar Viaje** button appears in the actions panel on the right side of the page. It is visible when your role is `Creador` and `viaje.creador_id` matches your user ID, or when your role is `Admin`.
+  </Step>
+  <Step title="Update the fields">
+    The edit form at `/trips/:id/edit` pre-fills all current values. You can update any of the same fields available when creating a trip: `nom`, `descripcio`, `desti`, `data_inici`, `data_fi`, `maxim_participants`, and `estat`.
+  </Step>
+  <Step title="Save or cancel">
+    Click **Guardar Cambios** to save. The frontend sends `PUT /creadorViatges/creator/trips/{id}` with the updated data. Click **Cancelar** to discard changes and go back.
+
+    On success, you are redirected to the trip detail page at `/trips/:id`.
+  </Step>
+</Steps>
+
+<Note>
+  Attempting to edit a trip you did not create (as a `Creador`) results in a `404` error from the backend: *"Viatge no trobat o no ets el creador"*.
+</Note>
+
+## Managing participants
+
+You can see who is enrolled in your trip from its detail page.
+
+- The **Participantes** count (`viaje.participants.length / viaje.maxim_participants`) is shown in the info list on the **Información** tab.
+- The full list of participant objects is included in the `GET /viatge/trips/{id}` response under the `participants` array.
+- Each participant entry includes their user `id`, which the frontend uses to determine enrollment status.
+
+<Tip>
+  If a trip reaches its `maxim_participants` limit, new enrollment attempts will be rejected with a `400` error. Update the `maxim_participants` field via the edit page if you want to increase capacity.
+</Tip>
+
+## Creator API endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/creadorViatges/creator/trips` | Create a new trip |
+| `PUT` | `/creadorViatges/creator/trips/{id}` | Edit an existing trip (own trips only) |
+| `POST` | `/viatge/promote-request` | Submit a promotion request (Viatger only) |

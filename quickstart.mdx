@@ -1,80 +1,181 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Get TravelConnect running locally in under ten minutes."
 ---
 
-## Get started in three steps
+This guide walks you through setting up the TravelConnect backend (FastAPI) and frontend (React/Vite) on your machine, then takes you through your first actions in the app.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you begin, make sure you have the following installed:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+| Tool | Minimum version |
+|------|----------------|
+| Python | 3.10+ |
+| pip | 22+ |
+| Node.js | 18+ |
+| npm | 9+ |
+| MySQL | 8.0+ |
 
-### Step 2: Deploy your changes
+<Tip>
+  On macOS, install Python and Node.js via [Homebrew](https://brew.sh). On Windows, use the official installers from [python.org](https://python.org) and [nodejs.org](https://nodejs.org).
+</Tip>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+## Set up TravelConnect
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Steps>
+  <Step title="Clone the repository">
+    <CodeGroup>
+      ```bash HTTPS
+      git clone https://github.com/your-org/travelconnect.git
+      cd travelconnect
+      ```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+      ```bash SSH
+      git clone git@github.com:your-org/travelconnect.git
+      cd travelconnect
+      ```
+    </CodeGroup>
+  </Step>
 
-### Step 3: Go live
+  <Step title="Create and configure the database">
+    TravelConnect uses a MySQL database. Create the schema before starting the backend:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```sql
+    CREATE DATABASE travelconect CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ```
 
-## Next steps
+    The default connection string in `Backend/db/database.py` expects a local MySQL instance with these credentials:
 
-Now that you have your docs running, explore these key features:
+    ```
+    Host:     localhost
+    Port:     3306
+    Database: travelconect
+    User:     root
+    Password: 1234
+    ```
 
-<CardGroup cols={2}>
+    <Warning>
+      Change the default credentials before deploying to any shared or production environment. Update `DATABASE_URL` in `Backend/db/database.py` to match your MySQL configuration.
+    </Warning>
+  </Step>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+  <Step title="Install backend dependencies">
+    From the `Backend` directory, install the required Python packages:
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+    <CodeGroup>
+      ```bash pip
+      cd Backend
+      pip install fastapi uvicorn sqlalchemy pymysql python-jose passlib bcrypt python-multipart
+      ```
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+      ```bash pip (virtual environment)
+      cd Backend
+      python -m venv .venv
+      source .venv/bin/activate   # Windows: .venv\Scripts\activate
+      pip install fastapi uvicorn sqlalchemy pymysql python-jose passlib bcrypt python-multipart
+      ```
+    </CodeGroup>
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+    <Note>
+      A `requirements.txt` is not included in the repository. The packages listed above correspond to all imports found across the backend source files.
+    </Note>
+  </Step>
 
-</CardGroup>
+  <Step title="Start the FastAPI server">
+    From the `Backend` directory, start the API with `uvicorn`:
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+    ```bash
+    uvicorn main:app --reload
+    ```
+
+    The server starts on **http://localhost:8000**. On first run, SQLAlchemy automatically creates all database tables via `Base.metadata.create_all`.
+
+    Verify the API is running:
+
+    ```bash
+    curl http://localhost:8000/
+    # {"mensaje":"HOLA"}
+    ```
+
+    You can also browse the auto-generated interactive API docs at **http://localhost:8000/docs**.
+  </Step>
+
+  <Step title="Install frontend dependencies">
+    Open a new terminal, then from the `FrontEnd` directory:
+
+    ```bash
+    cd FrontEnd
+    npm install
+    ```
+  </Step>
+
+  <Step title="Start the Vite dev server">
+    ```bash
+    npm run dev
+    ```
+
+    The app is available at **http://localhost:5173**. The frontend is pre-configured to send API requests to `http://localhost:8000`, so both servers must be running at the same time.
+  </Step>
+</Steps>
+
+## First steps
+
+With both servers running, try these actions to confirm everything is working end-to-end.
+
+<Steps>
+  <Step title="Register an account">
+    Navigate to **http://localhost:5173/register** and fill in your email, full name, and password.
+
+    New accounts are assigned the **Viatger** (Traveler) role by default. This role lets you browse trips and enroll as a participant.
+
+    You can also register directly through the API:
+
+    ```bash
+    curl -X POST http://localhost:8000/auth/register \
+      -H "Content-Type: application/json" \
+      -d '{"email": "you@example.com", "full_name": "Your Name", "password": "yourpassword"}'
+    ```
+  </Step>
+
+  <Step title="Log in">
+    Go to **http://localhost:5173/login** and sign in with the credentials you created. After a successful login, the app stores your JWT in `localStorage` and attaches it automatically to every subsequent API request via the `Authorization: Bearer` header.
+  </Step>
+
+  <Step title="Browse trips">
+    After logging in, you are redirected to the dashboard at **/dashboard**, which lists all available trips. Click any trip to open its detail page at `/trips/:id`, where you can view the destination, itinerary, and current participants.
+  </Step>
+
+  <Step title="Enroll in a trip">
+    On a trip detail page, click **Enroll** to join the trip. This sends a `POST` request to `/viatge/trips/:id/enroll` and adds you as a participant.
+
+    To leave a trip you have already joined, click **Leave**, which calls `/viatge/trips/:id/leave`.
+
+    <Note>
+      Only users with the **Viatger** role can enroll in trips. Creators and admins manage trips but do not enroll as participants.
+    </Note>
+  </Step>
+</Steps>
+
+## Available scripts
+
+Run these commands from the `FrontEnd` directory:
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the Vite development server on port 5173 |
+| `npm run build` | Build the frontend for production |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint across the frontend source |
+
+## User roles
+
+TravelConnect has three roles. A user's role is assigned at registration or updated by an admin.
+
+| Role | Access |
+|------|--------|
+| `Viatger` | Browse trips, enroll/leave trips, request a promotion to Creador |
+| `Creador` | All Viatger access, plus create and edit trips |
+| `Admin` | Full access, including user management at `/admin/users` and promotion request review at `/admin/requests` |
+
+To request a promotion from Viatger to Creador, navigate to **/promotion** after logging in.

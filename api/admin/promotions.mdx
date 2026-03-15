@@ -1,0 +1,71 @@
+---
+title: "List Promotion Requests"
+description: "Retrieve all creator promotion requests submitted by users."
+---
+
+## Endpoint
+
+`GET /admin/users/promotions`
+
+Returns all promotion requests that users have submitted via `POST /viatge/promote-request`. Administrators use this to review pending requests.
+
+<Note>
+  Due to FastAPI's route matching order, this endpoint must be defined before `/admin/users/{user_id}/promote` in the router registration — which it is in the source code.
+</Note>
+
+## Authentication
+
+No authentication enforced at the route level.
+
+## Request
+
+No parameters.
+
+## Response
+
+An array of promotion request objects.
+
+<ResponseField name="id" type="integer">
+  The promotion request's unique identifier.
+</ResponseField>
+
+<ResponseField name="missatge_peticio" type="string">
+  The message submitted by the user explaining their request.
+</ResponseField>
+
+<ResponseField name="estat" type="string">
+  The current status. One of `pendent`, `aprovat`, or `denegat`.
+</ResponseField>
+
+<ResponseField name="usuari_solicitant" type="integer">
+  The ID of the user who submitted the request.
+</ResponseField>
+
+## Example
+
+```bash
+curl http://localhost:8000/admin/users/promotions
+```
+
+```json
+[
+  {
+    "id": 1,
+    "missatge_peticio": "I have organized 5 trips and want to list them on TravelConnect.",
+    "estat": "pendent",
+    "usuari_solicitant": 1
+  },
+  {
+    "id": 2,
+    "missatge_peticio": "I am a professional tour guide.",
+    "estat": "aprovat",
+    "usuari_solicitant": 3
+  }
+]
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `404 Not Found` | `Promociones no encontradas` | No promotion requests exist in the database. |

@@ -1,0 +1,77 @@
+---
+title: "List Users"
+description: "Retrieve a list of all registered users."
+---
+
+## Endpoint
+
+`GET /admin/users`
+
+Returns all users registered on the platform. Intended for administrative use.
+
+## Authentication
+
+No authentication enforced at the route level.
+
+<Warning>
+  This endpoint returns all user records including roles. It should be protected at the infrastructure level in production deployments.
+</Warning>
+
+## Request
+
+No parameters.
+
+## Response
+
+An array of user objects.
+
+<ResponseField name="id" type="integer">
+  The user's unique identifier.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  The user's email address.
+</ResponseField>
+
+<ResponseField name="full_name" type="string">
+  The user's display name, or `null` if not set.
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  The user's role: `Viatger`, `Creador`, or `Admin`.
+</ResponseField>
+
+<ResponseField name="bio" type="string">
+  The user's biography, or `null` if not set.
+</ResponseField>
+
+## Example
+
+```bash
+curl http://localhost:8000/admin/users
+```
+
+```json
+[
+  {
+    "id": 1,
+    "email": "alice@example.com",
+    "full_name": "Alice",
+    "rol": "Viatger",
+    "bio": null
+  },
+  {
+    "id": 2,
+    "email": "bob@example.com",
+    "full_name": "Bob",
+    "rol": "Creador",
+    "bio": "Avid hiker and trip organizer."
+  }
+]
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `404 Not Found` | `Usuarios no encontrados` | No users exist in the database. |

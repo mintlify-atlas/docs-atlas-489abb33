@@ -1,0 +1,110 @@
+---
+title: "Trip chat"
+description: "How the per-trip group chat works, who can access it, and how messages are sent and retrieved."
+---
+
+Every trip has a dedicated group chat room. Chat gives enrolled participants and trip creators a shared space to coordinate, ask questions, and communicate during the planning and active phases of a trip.
+
+## Access rules
+
+The chat tab on the trip detail page is only visible to users who meet one of the following conditions:
+
+| Condition | Can see chat |
+|-----------|--------------|
+| Authenticated and enrolled in the trip | Yes |
+| Authenticated with the `Admin` role | Yes |
+| Authenticated but not enrolled | No |
+| Not authenticated | No |
+
+This check is performed on the frontend in `detalleViajes.jsx`:
+
+```javascript
+const canSeeChat = usuario && (usuario.role === 'Admin' || isEnrolled);
+```
+
+<Note>
+  Admins can always see the chat for any trip, even if they are not enrolled as participants.
+</Note>
+
+## Message structure
+
+Each message in the chat corresponds to a `MissatgeXat` record in the database.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | integer | Unique message ID |
+| `contingut` | string (max 1000) | The message text |
+| `timestamp` | datetime | When the message was sent |
+| `viatge_xat` | integer | Foreign key to the trip (`viatge.id`) |
+| `autor_xat` | integer | Foreign key to the author (`usuari.id`) |
+| `autor_nom` | string | Resolved display name (`full_name` or `email`) |
+
+The `autor_nom` field is not stored in the database. It is resolved at query time by the backend: if the author has a `full_name` set it is used, otherwise their `email` is used as the display name.
+
+## API endpoints
+
+### Retrieve messages
+
+```
+GET /missatges/trips/{trip_id}/chat
+```
+
+Returns a list of `MissatgeResponse` objects for the given trip, ordered by insertion. No authentication is required to read messages.
+
+**Response fields per message:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | integer | Message ID |
+| `contingut` | string | Message text |
+| `timestamp` | datetime | Send time |
+| `viatge_xat` | integer | Trip ID |
+| `autor_xat` | integer | Author user ID |
+| `autor_nom` | string | Author display name |
+
+### Send a message
+
+```
+POST /missatges/trips/{trip_id}/chat/send
+```
+
+Creates a new message in the trip's chat. Requires a valid JWT.
+
+**Request body:**
+
+```json
+{
+  "contingut": "Looking forward to the trip!"
+}
+```
+
+**Response:** The created `MissatgeResponse` object, including the resolved `autor_nom` of the current user.
+
+<Warning>
+  The endpoint returns a `400` error if the message cannot be saved. Ensure the `trip_id` refers to an existing trip.
+</Warning>
+
+## TripChat component
+
+The frontend renders the chat using the `TripChat` component (`src/componentes/TripChat.jsx`). It is embedded inside the **Chat del Grupo** tab on the trip detail page and only mounted when `canSeeChat` is `true`.
+
+**Component behavior:**
+
+<Steps>
+  <Step title="Load messages on mount">
+    When the component mounts (or when `tripId` changes), it calls `getChatMessages(tripId)`, which hits `GET /missatges/trips/{trip_id}/chat`. The returned messages are stored in local state and rendered as a scrollable list.
+  </Step>
+  <Step title="Display messages">
+    Each message is shown with the sender's `autor_nom` in blue and the `contingut` below it. If `autor_nom` is absent, it falls back to the string `'Usuario'`.
+  </Step>
+  <Step title="Send a message">
+    The user types in the text input and submits the form. The component calls `sendChatMessage(tripId, { contingut: text })`, which hits `POST /missatges/trips/{trip_id}/chat/send`. On success, the input is cleared and `fetchMsg()` is called again to reload the full message list.
+  </Step>
+  <Step title="Manual refresh">
+    An **Actualizar** button at the top of the chat panel lets users manually re-fetch messages at any time without reloading the page.
+  </Step>
+</Steps>
+
+<Tip>
+  Chat does not auto-poll for new messages. Use the **Actualizar** button to check for messages sent by other participants since you last loaded the page.
+</Tip>

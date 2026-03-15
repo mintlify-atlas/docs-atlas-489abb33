@@ -1,0 +1,46 @@
+---
+title: "Leave Trip"
+description: "Remove the currently authenticated user from a trip's participant list."
+---
+
+## Endpoint
+
+`POST /viatge/trips/{id}/leave`
+
+Removes the currently authenticated user from the participant list of the specified trip.
+
+## Authentication
+
+Required. Send a valid Bearer token in the `Authorization` header.
+
+## Request
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the trip to leave.
+</ParamField>
+
+No request body.
+
+## Response
+
+Returns the result of the de-enrollment operation.
+
+## Example
+
+```bash
+curl -X POST http://localhost:8000/viatge/trips/1/leave \
+  -H "Authorization: Bearer <access_token>"
+```
+
+```json
+{
+  "message": "Desinscripció correcta"
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `401 Unauthorized` | `Token no vàlid` | The token is missing, malformed, or expired. |
+| `404 Not Found` | _(varies)_ | The trip does not exist or the user was not enrolled. |

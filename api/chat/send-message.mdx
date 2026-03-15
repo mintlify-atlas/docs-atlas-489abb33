@@ -1,0 +1,78 @@
+---
+title: "Send Chat Message"
+description: "Post a new message to a trip's group chat."
+---
+
+## Endpoint
+
+`POST /missatges/trips/{trip_id}/chat/send`
+
+Sends a message to the group chat of the specified trip. The author is derived from the authenticated user's token.
+
+## Authentication
+
+Required. Send a valid Bearer token in the `Authorization` header.
+
+## Request
+
+<ParamField path="trip_id" type="integer" required>
+  The unique identifier of the trip to send the message to.
+</ParamField>
+
+<ParamField body="contingut" type="string" required>
+  The text content of the message. Maximum 1000 characters.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="integer">
+  The newly created message's unique identifier.
+</ResponseField>
+
+<ResponseField name="contingut" type="string">
+  The text content of the message.
+</ResponseField>
+
+<ResponseField name="viatge_xat" type="integer">
+  The ID of the trip this message belongs to.
+</ResponseField>
+
+<ResponseField name="autor_xat" type="integer">
+  The ID of the user who sent the message.
+</ResponseField>
+
+<ResponseField name="autor_nom" type="string">
+  The display name of the author (`full_name` if set, otherwise `email`).
+</ResponseField>
+
+<ResponseField name="timestamp" type="string">
+  ISO 8601 datetime of when the message was created.
+</ResponseField>
+
+## Example
+
+```bash
+curl -X POST http://localhost:8000/missatges/trips/1/chat/send \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"contingut": "I will bring the tent!"}'
+```
+
+```json
+{
+  "id": 12,
+  "contingut": "I will bring the tent!",
+  "viatge_xat": 1,
+  "autor_xat": 1,
+  "autor_nom": "Alice",
+  "timestamp": "2026-06-10T14:40:00"
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `400 Bad Request` | `Error al crear missatge` | The message could not be saved. |
+| `401 Unauthorized` | `Token no vàlid` | The token is missing, malformed, or expired. |
+| `422 Unprocessable Entity` | Validation error | The `contingut` field is missing from the request body. |

@@ -1,0 +1,143 @@
+---
+title: "Roles and permissions"
+description: "How the three-role access system works in TravelConnect and what each role can do."
+---
+
+TravelConnect uses a role-based access control system with three roles. Every user account has a `rol` field that determines which actions they can perform.
+
+## The three roles
+
+<Tabs>
+  <Tab title="Viatger (Traveler)">
+    The default role assigned to all new accounts.
+
+    **What a Viatger can do:**
+    - Browse all trips (`GET /viatge/trips`)
+    - View trip detail pages (`GET /viatge/trips/{id}`)
+    - Enroll in a trip (`POST /viatge/trips/{id}/enroll`)
+    - Leave a trip (`POST /viatge/trips/{id}/leave`)
+    - Read and send messages in trips they are enrolled in
+    - View and update their own profile
+    - Submit a promotion request to become a Creator (`POST /viatge/promote-request`)
+
+    **What a Viatger cannot do:**
+    - Create or edit trips
+    - Access admin features
+  </Tab>
+  <Tab title="Creador (Creator)">
+    An elevated role granted by an Admin after reviewing a promotion request.
+
+    **What a Creador can do:**
+    - Everything a Viatger can do
+    - Create new trips (`POST /creator/trips`)
+    - Edit their own trips (`PUT /creator/trips/{id}`)
+    - Access trip chat for any trip they created
+
+    **What a Creador cannot do:**
+    - Edit trips created by other users
+    - Manage users or promotion requests
+  </Tab>
+  <Tab title="Admin">
+    Full platform access. The Admin role is assigned directly by another admin via the API.
+
+    **What an Admin can do:**
+    - Everything a Creador can do
+    - Edit any trip, regardless of who created it (`PUT /creator/trips/{id}`)
+    - List all users (`GET /users`)
+    - Change any user's role (`PUT /users/{user_id}/promote`)
+    - View all pending promotion requests (`GET /users/promotions`)
+    - Approve or reject promotion requests (`PUT /promotions/{user_id}`)
+    - See the chat tab on any trip, even without enrollment
+  </Tab>
+</Tabs>
+
+## Permissions summary
+
+| Action | Viatger | Creador | Admin |
+|--------|---------|---------|-------|
+| Browse and view trips | Yes | Yes | Yes |
+| Enroll in / leave a trip | Yes | Yes | Yes |
+| Read and send chat messages | Enrolled only | Enrolled or creator | All trips |
+| Create a trip | No | Yes | Yes |
+| Edit own trips | No | Yes | Yes |
+| Edit any trip | No | No | Yes |
+| List all users | No | No | Yes |
+| Change user roles | No | No | Yes |
+| Review promotion requests | No | No | Yes |
+| Submit promotion request | Yes | No | No |
+
+## How roles are stored and checked
+
+The `rol` field is stored in the `usuari` database table as a string with one of three values: `Viatger`, `Creador`, or `Admin`.
+
+When a user logs in, the backend encodes the `rol` value into the JWT payload. Subsequent requests include the token, and `get_current_user` decodes it to return the authenticated user object — including their `rol`.
+
+Backend routers check the role directly on the resolved user object:
+
+```python
+# From creadorViatges.py
+if usuari.rol not in ["Creador", "Admin"]:
+    raise HTTPException(
+        status_code=403,
+        detail=f"Permiso denegado. Tu rol actual es: {usuari.rol}"
+    )
+```
+
+On the frontend, the decoded user object exposes the role as `usuario.role`. Components use this to conditionally render actions:
+
+```javascript
+// Show create button only for Creador and Admin
+const mostrarBotonCrear = usuario && (usuario.role === 'Creador' || usuario.role === 'Admin');
+
+// Show edit button only for the trip's creator or any Admin
+const canEdit = usuario && (usuario.role === 'Admin' || (usuario.role === 'Creador' && viaje.creador_id === usuario.id));
+```
+
+## Promotion request flow
+
+A Viatger who wants to become a Creator submits a promotion request with a message explaining why.
+
+<Steps>
+  <Step title="Submit a promotion request">
+    The Viatger calls `POST /viatge/promote-request` with a `missatge` body explaining their request. A `PeticioPromo` record is created in the database linked to their user ID.
+  </Step>
+  <Step title="Admin reviews requests">
+    An Admin calls `GET /users/promotions` to list all pending promotion requests.
+  </Step>
+  <Step title="Admin approves or rejects">
+    The Admin calls `PUT /promotions/{user_id}` with a `new_estado` body to update the request's status.
+  </Step>
+  <Step title="Admin promotes the user">
+    To grant the Creator role, the Admin calls `PUT /users/{user_id}/promote` with `new_rol: "Creador"`. The user's `rol` field is updated in the database and their next login will reflect the new role.
+  </Step>
+</Steps>
+
+<Note>
+  Approving the promotion request and actually changing the role are two separate API calls. Updating the request status (`PUT /promotions/{user_id}`) does not automatically change the user's role.
+</Note>
+
+## Protected routes on the frontend
+
+The `RutaProtegida` component (`src/componentes/rutaProtegida.jsx`) wraps routes that require authentication or a specific role. It reads the current user from `AuthContext` and applies two checks:
+
+1. **Authentication check:** If there is no authenticated user, the visitor is redirected to `/login`.
+2. **Role check:** If `rolesPermitidos` is provided and the user's role is not in the list, they are redirected to `/` (the home page).
+
+If both checks pass, the `<Outlet />` renders the protected child route.
+
+```javascript
+// From rutaProtegida.jsx
+if (!usuario) {
+  return <Navigate to="/login" replace />;
+}
+
+if (rolesPermitidos && !rolesPermitidos.includes(usuario.role)) {
+  return <Navigate to="/" replace />;
+}
+
+return <Outlet />;
+```
+
+<Warning>
+  The `RutaProtegida` component shows a loading spinner while `AuthContext` is resolving the current user (`cargando === true`). This prevents a flash-redirect to login on page refresh.
+</Warning>

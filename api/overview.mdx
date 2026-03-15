@@ -1,0 +1,131 @@
+---
+title: "API Overview"
+description: "Base URL, authentication, error format, CORS policy, and a quick reference of all TravelConnect API endpoints."
+---
+
+## Base URL
+
+```
+http://localhost:8000
+```
+
+All endpoint paths below are relative to this base URL.
+
+## Authentication
+
+TravelConnect uses **JWT Bearer tokens** for authentication. Protected endpoints require a valid token in the `Authorization` header.
+
+### Obtaining a token
+
+Send a `POST /auth/login` request using `application/x-www-form-urlencoded` with your credentials:
+
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=user@example.com&password=yourpassword"
+```
+
+The response contains an `access_token`:
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer",
+  "rol": "Viatger"
+}
+```
+
+### Sending the token
+
+Include the token in the `Authorization` header of every protected request:
+
+```
+Authorization: Bearer <access_token>
+```
+
+### Token structure
+
+Tokens are signed with **HS256** and expire after **30 minutes**. The payload contains:
+
+| Claim | Type | Description |
+|-------|------|-------------|
+| `sub` | string | The authenticated user's numeric ID |
+| `rol` | string | User role: `Viatger`, `Creador`, or `Admin` |
+| `username` | string | User's `full_name`, falling back to `email` if not set |
+| `exp` | integer | Token expiry (Unix timestamp) |
+
+## User Roles
+
+| Role | Description |
+|------|-------------|
+| `Viatger` | Default role. Can browse trips, enroll/leave, and chat. |
+| `Creador` | Can create and edit their own trips. |
+| `Admin` | Full access including user management and promotion requests. |
+
+## Error Format
+
+All errors follow FastAPI's standard `HTTPException` format:
+
+```json
+{
+  "detail": "Human-readable error message"
+}
+```
+
+## CORS Policy
+
+The API only accepts cross-origin requests from the frontend origins:
+
+- `http://localhost:5173`
+- `http://127.0.0.1:5173`
+
+All HTTP methods and headers are allowed. Credentials are permitted.
+
+## Endpoint Quick Reference
+
+### Auth
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/auth/login` | No | Obtain a JWT access token |
+| `POST` | `/auth/register` | No | Create a new user account |
+
+### Users
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/users/users/me` | Bearer | Get current user profile |
+| `PUT` | `/users/users/me/{nom}/{bio}` | Bearer | Update current user profile |
+
+### Trips
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/viatge/trips` | No | List all trips |
+| `GET` | `/viatge/trips/{id}` | No | Get a trip by ID |
+| `POST` | `/viatge/trips/{id}/enroll` | Bearer | Enroll in a trip |
+| `POST` | `/viatge/trips/{id}/leave` | Bearer | Leave a trip |
+| `POST` | `/viatge/promote-request` | Bearer | Submit a creator promotion request |
+
+### Creator
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/creadorViatges/creator/trips` | Bearer (Creador/Admin) | Create a new trip |
+| `PUT` | `/creadorViatges/creator/trips/{id}` | Bearer (Creador/Admin) | Edit an existing trip |
+
+### Chat
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/missatges/trips/{trip_id}/chat` | No | Get messages for a trip chat |
+| `POST` | `/missatges/trips/{trip_id}/chat/send` | Bearer | Send a message to a trip chat |
+
+### Admin
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/admin/users` | No | List all users |
+| `PUT` | `/admin/users/{user_id}/promote` | No | Change a user's role |
+| `GET` | `/admin/users/promotions` | No | List promotion requests |
+| `PUT` | `/admin/promotions/{user_id}` | No | Update a promotion request status |

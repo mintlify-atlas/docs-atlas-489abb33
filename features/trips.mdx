@@ -1,0 +1,99 @@
+---
+title: "Trips"
+description: "How trip management works in TravelConnect — browsing, enrolling, and understanding the trip lifecycle."
+---
+
+A trip is the core unit of TravelConnect. Each trip represents a planned group travel experience that users can discover, join, and discuss.
+
+## Trip fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `nom` | string (max 50) | The name of the trip |
+| `desti` | string (max 50) | The destination |
+| `data_inici` | string (YYYY-MM-DD) | Start date |
+| `data_fi` | string (YYYY-MM-DD) | End date |
+| `maxim_participants` | integer | Maximum number of participants (default: 10) |
+| `descripcio` | string (max 200) | A short description of the trip |
+| `estat` | enum | Current status of the trip |
+| `creador_id` | integer | The ID of the user who created the trip |
+
+## Trip statuses
+
+Every trip has an `estat` field that reflects its current stage in the planning lifecycle.
+
+| Status | Value | Meaning |
+|--------|-------|---------|
+| Planning | `Planificant` | The trip is being organized and is open for enrollment |
+| Active | `Actiu` | The trip is underway |
+| Complete | `Complet` | The trip has concluded |
+| Cancelled | `Cancel·lat` | The trip has been cancelled |
+
+<Note>
+  New trips default to the `Planificant` status. Only users with the **Creator** or **Admin** role can change a trip's status.
+</Note>
+
+## Trip status lifecycle
+
+```
+Planificant → Actiu → Complet
+     ↓
+ Cancel·lat
+```
+
+A trip moves from planning to active once the travel begins, then to complete afterward. At any point before the trip is active, a creator can cancel it.
+
+## Browsing trips
+
+All trips are listed on the **Explorar Viajes** page. You do not need to be logged in to view the list.
+
+<Steps>
+  <Step title="Open the trips list">
+    Navigate to `/trips`. The page fetches all trips from `GET /viatge/trips` and displays them as cards.
+  </Step>
+  <Step title="Open a trip's detail page">
+    Click any trip card to open the detail view at `/trips/{id}`. The detail page fetches the trip from `GET /viatge/trips/{id}` and shows its full information.
+  </Step>
+  <Step title="Review trip information">
+    The detail page shows the destination, start and end dates, current participant count vs. capacity, description, and the trip's current status.
+  </Step>
+</Steps>
+
+<Tip>
+  Users with the **Creator** or **Admin** role see a **+ Crear Nuevo Viaje** button on the trips list page.
+</Tip>
+
+## Enrolling in a trip
+
+Any authenticated user with the **Viatger** role can enroll in a trip from its detail page.
+
+<Steps>
+  <Step title="Open the trip detail page">
+    Navigate to `/trips/{id}` for the trip you want to join.
+  </Step>
+  <Step title="Click Inscribirse ahora">
+    The **Inscribirse ahora** button appears in the actions panel if you are not yet enrolled and your role is `Viatger`.
+  </Step>
+  <Step title="Confirm enrollment">
+    The frontend sends `POST /viatge/trips/{id}/enroll` with your JWT. Once successful, the button is replaced with an **Inscrito** confirmation and your name appears in the participant list.
+  </Step>
+</Steps>
+
+<Warning>
+  Enrollment will fail with a `400` error if the trip has already reached its `maxim_participants` limit or if you are already enrolled.
+</Warning>
+
+## Leaving a trip
+
+To leave a trip you have already joined, the frontend sends `POST /viatge/trips/{id}/leave` with your JWT. Your enrollment record is removed and you lose access to the trip's chat tab.
+
+## API endpoints
+
+| Method | Endpoint | Auth required | Description |
+|--------|----------|---------------|-------------|
+| `GET` | `/viatge/trips` | No | List all trips |
+| `GET` | `/viatge/trips/{id}` | No | Get a single trip by ID |
+| `POST` | `/viatge/trips/{id}/enroll` | Yes | Enroll the authenticated user |
+| `POST` | `/viatge/trips/{id}/leave` | Yes | Unenroll the authenticated user |
+| `POST` | `/creator/trips` | Yes (Creator/Admin) | Create a new trip |
+| `PUT` | `/creator/trips/{id}` | Yes (Creator/Admin) | Edit an existing trip |

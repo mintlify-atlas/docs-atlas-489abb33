@@ -1,0 +1,126 @@
+---
+title: "Create Trip"
+description: "Create a new trip as a Creador or Admin."
+---
+
+## Endpoint
+
+`POST /creadorViatges/creator/trips`
+
+Creates a new trip. The authenticated user is automatically set as the `creador_id`. Only users with the `Creador` or `Admin` role can call this endpoint.
+
+## Authentication
+
+Required. The authenticated user must have the `Creador` or `Admin` role.
+
+<Warning>
+  Users with the `Viatger` role will receive a `403 Forbidden` error.
+</Warning>
+
+## Request
+
+Send a JSON object with trip fields.
+
+<ParamField body="nom" type="string" required>
+  The name of the trip. Maximum 50 characters.
+</ParamField>
+
+<ParamField body="desti" type="string" required>
+  The destination. Maximum 50 characters.
+</ParamField>
+
+<ParamField body="data_inici" type="string" required>
+  Start date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField body="data_fi" type="string" required>
+  End date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField body="descripcio" type="string">
+  Optional description. Maximum 200 characters.
+</ParamField>
+
+<ParamField body="estat" type="string">
+  Planning status. One of `Planificant`, `Actiu`, `Complet`, `Cancel·lat`. Defaults to `Planificant`.
+</ParamField>
+
+<ParamField body="maxim_participants" type="integer">
+  Maximum number of participants. Defaults to `10`.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="integer">
+  The newly created trip's unique identifier.
+</ResponseField>
+
+<ResponseField name="nom" type="string">
+  The trip name.
+</ResponseField>
+
+<ResponseField name="desti" type="string">
+  The destination.
+</ResponseField>
+
+<ResponseField name="data_inici" type="string">
+  Start date.
+</ResponseField>
+
+<ResponseField name="data_fi" type="string">
+  End date.
+</ResponseField>
+
+<ResponseField name="descripcio" type="string">
+  Description, or `null`.
+</ResponseField>
+
+<ResponseField name="estat" type="string">
+  Planning status.
+</ResponseField>
+
+<ResponseField name="creador_id" type="integer">
+  ID of the user who created the trip (the authenticated user).
+</ResponseField>
+
+<ResponseField name="maxim_participants" type="integer">
+  Maximum number of participants.
+</ResponseField>
+
+## Example
+
+```bash
+curl -X POST http://localhost:8000/creadorViatges/creator/trips \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nom": "Costa Brava Weekend",
+    "desti": "Costa Brava",
+    "data_inici": "2026-08-15",
+    "data_fi": "2026-08-17",
+    "descripcio": "A relaxing weekend by the sea.",
+    "maxim_participants": 8
+  }'
+```
+
+```json
+{
+  "id": 5,
+  "nom": "Costa Brava Weekend",
+  "desti": "Costa Brava",
+  "data_inici": "2026-08-15",
+  "data_fi": "2026-08-17",
+  "descripcio": "A relaxing weekend by the sea.",
+  "estat": "Planificant",
+  "creador_id": 2,
+  "maxim_participants": 8
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `401 Unauthorized` | `Token no vàlid` | The token is missing, malformed, or expired. |
+| `403 Forbidden` | `Permiso denegado. Tu rol actual es: Viatger` | The user does not have the `Creador` or `Admin` role. |
+| `422 Unprocessable Entity` | Validation error | Required fields are missing from the request body. |

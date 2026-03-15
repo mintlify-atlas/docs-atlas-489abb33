@@ -1,0 +1,146 @@
+---
+title: "Admin guide"
+description: "A complete guide for Admin users — managing users, reviewing promotion requests, and overseeing all trips on the platform."
+---
+
+The **Admin** role provides full platform access. Admins can manage users, review promotion requests, and edit any trip regardless of who created it.
+
+<Note>
+  Admins have all Creator and Traveler capabilities. Everything in the [Traveler guide](/guides/traveler) and [Creator guide](/guides/creator) applies to Admins as well.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Manage users" icon="users" href="#managing-users">
+    View and change user roles at `/admin/users`
+  </Card>
+  <Card title="Review promotions" icon="clipboard-check" href="#managing-promotion-requests">
+    Approve or reject Creator requests at `/admin/requests`
+  </Card>
+  <Card title="Edit any trip" icon="pencil" href="#creating-and-editing-trips">
+    Create and edit all trips, not just your own
+  </Card>
+  <Card title="Full chat access" icon="comments" href="#chat-access">
+    View the group chat on every trip without enrolling
+  </Card>
+</CardGroup>
+
+## Accessing the admin panel
+
+The admin panel consists of two protected pages, both under the `/admin` prefix. They are only accessible to users with the `Admin` role — any other role is redirected to `/`.
+
+| Page | Route | Purpose |
+|------|-------|---------|
+| User management | `/admin/users` | View all registered users and change their roles |
+| Promotion requests | `/admin/requests` | Review, approve, and reject Creator promotion requests |
+
+## Managing users
+
+The **Gestión de Usuarios** page at `/admin/users` gives you a full list of registered accounts.
+
+<Steps>
+  <Step title="Open the user management page">
+    Navigate to `/admin/users`. The page calls `GET /admin/users`, which returns all registered users as a list of `UsuariResponse` objects.
+  </Step>
+  <Step title="Review the user table">
+    Each row in the table shows:
+
+    | Column | Field | Description |
+    |--------|-------|-------------|
+    | **ID** | `id` | The user's numeric ID |
+    | **Nombre** | `full_name` | The user's full name |
+    | **Email** | `email` | The user's email address |
+    | **Rol** | `rol` | Current role badge: Viajero (blue), Creador (yellow), Admin (red) |
+    | **Acciones** | — | Role toggle button (not shown for Admin accounts) |
+  </Step>
+  <Step title="Change a user's role">
+    Click **Cambiar a Creador** or **Cambiar a Viajero** in the **Acciones** column. The button label reflects the role the user will be switched *to*.
+
+    The frontend sends `PUT /admin/users/{user_id}/promote` with body `{ "new_rol": "Creador" }` or `{ "new_rol": "Viatger" }`. The user's `rol` field is updated immediately in the table on success.
+  </Step>
+</Steps>
+
+<Warning>
+  You cannot change the role of another Admin from this page — the **Acciones** button is hidden for `Admin` accounts. Role changes take effect on the user's next login, as the role is encoded in their JWT.
+</Warning>
+
+<Note>
+  Changing a user's role via `/admin/users` is a direct update — it does not require a promotion request to exist first. Use this when you need to promote or demote a user immediately.
+</Note>
+
+## Managing promotion requests
+
+The **Gestión de Peticiones** page at `/admin/requests` shows all Creator promotion requests submitted by Travelers.
+
+<Steps>
+  <Step title="Open the promotion requests page">
+    Navigate to `/admin/requests`. The page calls `GET /admin/users/promotions`, which returns all promotion request records as a list of `PeticioPromoResponse` objects.
+  </Step>
+  <Step title="Review each request">
+    The table displays:
+
+    | Column | Field | Description |
+    |--------|-------|-------------|
+    | **Usuario ID** | `usuari_solicitant` | The ID of the user who submitted the request |
+    | **Mensaje / Justificación** | `missatge_peticio` | The applicant's written justification |
+    | **Estado Actual** | `estat` | Current status: Pendiente (yellow), Aprobado (green), Denegado (red) |
+    | **Acciones** | — | Approve / Reject buttons (only shown for `pendent` requests) |
+  </Step>
+  <Step title="Approve or reject the request">
+    For any request with status `pendent`:
+
+    - Click **Aprobar** to approve. The frontend sends `PUT /admin/promotions/{user_id}` with body `{ "new_estado": "aprovat" }`.
+    - Click **Denegar** to reject. The frontend sends `PUT /admin/promotions/{user_id}` with body `{ "new_estado": "denegat" }`.
+
+    The table reloads automatically after each action.
+  </Step>
+  <Step title="Promote the user's role if approved">
+    Approving a request updates the request's status but does **not** automatically change the user's role. After approving, go to `/admin/users` and click **Cambiar a Creador** for the corresponding user to grant the `Creador` role.
+  </Step>
+</Steps>
+
+<Warning>
+  Approving a promotion request and granting the Creator role are two separate steps. A request can be marked as `aprovat` while the user's role remains `Viatger` until you explicitly change it on the `/admin/users` page.
+</Warning>
+
+## Creating and editing trips
+
+Admins can create new trips and edit any existing trip on the platform, regardless of who created it.
+
+### Creating a trip
+
+Navigate to `/trips/create` or click **+ Crear Nuevo Viaje** on the dashboard. The form fields are identical to those used by Creators — see the [Creator guide](/guides/creator#creating-a-new-trip) for field details. The frontend sends `POST /creadorViatges/creator/trips`.
+
+### Editing any trip
+
+<Steps>
+  <Step title="Open the trip detail page">
+    Navigate to `/trips/:id` for any trip on the platform.
+  </Step>
+  <Step title="Click Editar Viaje">
+    The **Editar Viaje** button is visible to Admins on every trip detail page, regardless of who created the trip. The `canEdit` check in `detalleViajes.jsx` evaluates to `true` when `usuario.role === 'Admin'`.
+  </Step>
+  <Step title="Update and save">
+    Modify any fields on the edit form at `/trips/:id/edit` and click **Guardar Cambios**. The frontend sends `PUT /creadorViatges/creator/trips/{id}`. The backend CRUD layer checks `usuari.rol` and allows the update for Admins regardless of `creador_id`.
+  </Step>
+</Steps>
+
+## Chat access
+
+Admins can view the **Chat del Grupo** tab on every trip detail page without needing to enroll. The `canSeeChat` flag in `detalleViajes.jsx` evaluates to `true` when `usuario.role === 'Admin'`:
+
+```javascript
+const canSeeChat = usuario && (usuario.role === 'Admin' || isEnrolled);
+```
+
+This means you can monitor all group conversations across the platform without joining any trips.
+
+## Admin API endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/admin/users` | List all registered users |
+| `PUT` | `/admin/users/{user_id}/promote` | Change a user's role (`new_rol`) |
+| `GET` | `/admin/users/promotions` | List all promotion requests |
+| `PUT` | `/admin/promotions/{user_id}` | Update a promotion request status (`new_estado`) |
+| `POST` | `/creadorViatges/creator/trips` | Create a new trip |
+| `PUT` | `/creadorViatges/creator/trips/{id}` | Edit any trip |

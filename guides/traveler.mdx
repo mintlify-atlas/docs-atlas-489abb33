@@ -1,0 +1,188 @@
+---
+title: "Traveler guide"
+description: "A step-by-step guide for Viatger users — registering, browsing trips, enrolling, using chat, managing your profile, and requesting a Creator promotion."
+---
+
+The **Viatger** (Traveler) role is the default role assigned to every new TravelConnect account. This guide walks you through everything you can do as a Traveler.
+
+<CardGroup cols={2}>
+  <Card title="Register" icon="user-plus" href="#registering-an-account">
+    Create your account at `/register`
+  </Card>
+  <Card title="Browse trips" icon="map" href="#browsing-the-trip-list">
+    Discover available trips at `/dashboard`
+  </Card>
+  <Card title="Enroll and chat" icon="comments" href="#enrolling-in-a-trip">
+    Join a trip and access the group chat
+  </Card>
+  <Card title="Become a Creator" icon="star" href="#requesting-a-creator-promotion">
+    Apply for the Creator role at `/promotion`
+  </Card>
+</CardGroup>
+
+## Registering an account
+
+New users register at `/register`. All accounts are created with the `Viatger` role by default.
+
+<Steps>
+  <Step title="Open the registration page">
+    Navigate to `/register`. The page is publicly accessible — no login required.
+  </Step>
+  <Step title="Fill in your details">
+    Complete all required fields:
+
+    | Field | Description |
+    |-------|-------------|
+    | **Nombre Completo** (`full_name`) | Your full name, e.g. *Juan Pérez* |
+    | **Correo electrónico** (`email`) | A valid email address used to log in |
+    | **Contraseña** (`password`) | Minimum 6 characters |
+
+    <Note>
+      The `rol` field is set to `Viatger` automatically. You cannot select a different role at registration.
+    </Note>
+  </Step>
+  <Step title="Submit the form">
+    Click **Registrarse**. The frontend sends `POST /auth/register` with your details. On success, you are redirected to `/login`.
+  </Step>
+</Steps>
+
+## Logging in
+
+<Steps>
+  <Step title="Open the login page">
+    Navigate to `/login`.
+  </Step>
+  <Step title="Enter your credentials">
+    Enter the **Correo electrónico** and **Contraseña** you registered with.
+  </Step>
+  <Step title="Click Entrar">
+    The frontend sends `POST /auth/login` (as `application/x-www-form-urlencoded` with `username` and `password` fields, as required by OAuth2). On success, a JWT access token is stored in the session and you are redirected to `/dashboard`.
+  </Step>
+</Steps>
+
+<Warning>
+  If you see "Email o contraseña incorrectos", double-check that you are using the email address you registered with. Passwords are case-sensitive.
+</Warning>
+
+## Browsing the trip list
+
+After logging in you land on `/dashboard`, the main trip discovery page.
+
+- The page calls `GET /viatge/trips` and displays all available trips as cards.
+- Each card shows the trip name, destination (`desti`), dates, and current status (`estat`).
+- If no trips exist yet, the page shows an informational message.
+
+<Tip>
+  Trips with status `Actiu` are currently underway. Look for trips with status `Planificant` if you want to enroll before departure.
+</Tip>
+
+## Viewing trip details
+
+Click any trip card on the dashboard to open its detail page at `/trips/:id`.
+
+The detail page calls `GET /viatge/trips/{id}` and displays:
+
+| Section | Information shown |
+|---------|------------------|
+| Header | Trip name (`nom`), destination badge, date range, status badge |
+| Description | Full trip description (`descripcio`) and cover image if provided |
+| Info list | Destination, start date (`data_inici`), end date (`data_fi`), participant count vs. capacity (`maxim_participants`) |
+| Actions panel | Enroll button (if not yet enrolled), or "Inscrito" confirmation |
+
+The page has two tabs: **Información** (always visible) and **Chat del Grupo** (visible only to enrolled users and Admins).
+
+## Enrolling in a trip
+
+<Steps>
+  <Step title="Open the trip detail page">
+    Navigate to `/trips/:id` for the trip you want to join.
+  </Step>
+  <Step title="Click Inscribirse ahora">
+    The **Inscribirse ahora** button appears in the actions panel on the right side of the page. It is only shown when your role is `Viatger` and you are not yet enrolled.
+  </Step>
+  <Step title="Confirm">
+    The frontend sends `POST /viatge/trips/{id}/enroll` with your JWT. On success, the button is replaced by an **Inscrito** confirmation badge and your name is added to the participant list.
+  </Step>
+</Steps>
+
+<Warning>
+  Enrollment will fail if the trip has reached its maximum participant capacity (`maxim_participants`) or if you are already enrolled.
+</Warning>
+
+## Leaving a trip
+
+If you need to leave a trip you have already joined:
+
+<Steps>
+  <Step title="Open the trip detail page">
+    Navigate to `/trips/:id` for the trip you want to leave.
+  </Step>
+  <Step title="Use the leave action">
+    The frontend sends `POST /viatge/trips/{id}/leave` with your JWT. Your enrollment record is removed.
+  </Step>
+</Steps>
+
+<Note>
+  After leaving a trip, the **Chat del Grupo** tab is no longer visible to you. You can re-enroll later if the trip still has capacity.
+</Note>
+
+## Using trip chat
+
+The group chat is available on the **Chat del Grupo** tab of any trip you are enrolled in.
+
+- The `TripChat` component loads messages for the trip and lets you send new ones in real time.
+- The chat tab only appears when you are enrolled (`isEnrolled === true`) or when your role is `Admin`.
+- To access the chat, click the **Chat del Grupo** tab on the trip detail page at `/trips/:id`.
+
+<Tip>
+  If you do not see the **Chat del Grupo** tab, you are not enrolled in that trip. Enroll first using the **Inscribirse ahora** button.
+</Tip>
+
+## Viewing and editing your profile
+
+Your profile is at `/profile`. It calls `GET /users/users/me` to load your account information.
+
+**Profile information displayed:**
+
+| Field | Description |
+|-------|-------------|
+| **Email** | Your registered email address (read-only) |
+| **Biografía** (`bio`) | A short personal bio, editable |
+| **Rol Actual** | Your current role badge (Viajero / Creador / Administrador) |
+
+**To edit your profile:**
+
+<Steps>
+  <Step title="Click Editar Perfil">
+    The button appears in the top-right of the account information section.
+  </Step>
+  <Step title="Update your details">
+    You can change your **Nombre Completo** (`full_name`) and **Biografía** (`bio`). Your email and role cannot be changed from this page.
+  </Step>
+  <Step title="Save changes">
+    Click **Guardar Cambios**. The frontend sends `PUT /users/users/me/{full_name}/{bio}` with your updated values.
+  </Step>
+</Steps>
+
+## Requesting a Creator promotion
+
+If you want to create your own trips, you can request a promotion to the **Creador** role. This feature is only available to users with the `Viatger` role.
+
+<Steps>
+  <Step title="Navigate to /promotion">
+    Go to `/promotion`. This route is protected — it is only accessible when you are logged in with the `Viatger` role.
+  </Step>
+  <Step title="Write your justification">
+    Fill in the **Justificación / Motivación** (`missatge`) field. Explain why you want to become a Creator and what types of travel experiences you would like to offer. This message is sent to the admin for review.
+  </Step>
+  <Step title="Submit the request">
+    Click **Enviar Solicitud**. The frontend sends `POST /viatge/promote-request` with the body `{ "missatge": "your message" }`. On success, you see a confirmation and are redirected to `/dashboard` after a few seconds.
+  </Step>
+  <Step title="Wait for admin review">
+    An admin will review your request from the `/admin/requests` panel and either approve or reject it. If approved, the admin must also change your role to `Creador`. Your next login will reflect the updated role.
+  </Step>
+</Steps>
+
+<Note>
+  The `/promotion` route is removed from navigation once your role changes to `Creador` or `Admin`. You can only submit one promotion request at a time.
+</Note>

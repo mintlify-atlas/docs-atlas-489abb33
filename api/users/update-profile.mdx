@@ -1,0 +1,78 @@
+---
+title: "Update Profile"
+description: "Update the display name and bio of the currently authenticated user."
+---
+
+## Endpoint
+
+`PUT /users/users/me/{nom}/{bio}`
+
+Updates the `full_name` and `bio` fields of the current user. Both values are supplied as URL path parameters.
+
+## Authentication
+
+Required. Send a valid Bearer token in the `Authorization` header.
+
+## Request
+
+<ParamField path="nom" type="string" required>
+  The new display name for the user. Maximum 50 characters.
+</ParamField>
+
+<ParamField path="bio" type="string" required>
+  The new biography text for the user. Maximum 200 characters.
+</ParamField>
+
+No request body.
+
+## Response
+
+Returns the updated user object.
+
+<ResponseField name="id" type="integer">
+  The user's unique identifier.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  The user's email address.
+</ResponseField>
+
+<ResponseField name="full_name" type="string">
+  The updated display name.
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  The user's role: `Viatger`, `Creador`, or `Admin`.
+</ResponseField>
+
+<ResponseField name="bio" type="string">
+  The updated biography.
+</ResponseField>
+
+## Example
+
+```bash
+curl -X PUT "http://localhost:8000/users/users/me/Alice/Travel%20enthusiast" \
+  -H "Authorization: Bearer <access_token>"
+```
+
+```json
+{
+  "id": 1,
+  "email": "alice@example.com",
+  "full_name": "Alice",
+  "rol": "Viatger",
+  "bio": "Travel enthusiast"
+}
+```
+
+<Note>
+  URL-encode special characters in `nom` and `bio` (e.g., spaces become `%20`).
+</Note>
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `401 Unauthorized` | `Token no vàlid` | The token is missing, malformed, or expired. |
+| `404 Not Found` | `Usuari no trobat` | The user ID in the token no longer exists in the database. |

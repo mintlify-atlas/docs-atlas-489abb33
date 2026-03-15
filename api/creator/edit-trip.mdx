@@ -1,0 +1,126 @@
+---
+title: "Edit Trip"
+description: "Update an existing trip as its creator or as an Admin."
+---
+
+## Endpoint
+
+`PUT /creadorViatges/creator/trips/{id}`
+
+Updates the fields of an existing trip. Only the trip's creator or an `Admin` can edit it. Only users with the `Creador` or `Admin` role can call this endpoint.
+
+## Authentication
+
+Required. The authenticated user must have the `Creador` or `Admin` role.
+
+<Warning>
+  A `Creador` can only edit trips they own. Attempting to edit another creator's trip returns `404`.
+</Warning>
+
+## Request
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the trip to edit.
+</ParamField>
+
+Send a JSON object with the fields to update.
+
+<ParamField body="nom" type="string">
+  New trip name. Maximum 50 characters.
+</ParamField>
+
+<ParamField body="desti" type="string">
+  New destination. Maximum 50 characters.
+</ParamField>
+
+<ParamField body="data_inici" type="string">
+  New start date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField body="data_fi" type="string">
+  New end date in `YYYY-MM-DD` format.
+</ParamField>
+
+<ParamField body="descripcio" type="string">
+  New description. Maximum 200 characters.
+</ParamField>
+
+<ParamField body="estat" type="string">
+  New planning status. One of `Planificant`, `Actiu`, `Complet`, `Cancel·lat`.
+</ParamField>
+
+<ParamField body="maxim_participants" type="integer">
+  New maximum number of participants.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="integer">
+  The trip's unique identifier.
+</ResponseField>
+
+<ResponseField name="nom" type="string">
+  The updated trip name.
+</ResponseField>
+
+<ResponseField name="desti" type="string">
+  The updated destination.
+</ResponseField>
+
+<ResponseField name="data_inici" type="string">
+  The updated start date.
+</ResponseField>
+
+<ResponseField name="data_fi" type="string">
+  The updated end date.
+</ResponseField>
+
+<ResponseField name="descripcio" type="string">
+  The updated description.
+</ResponseField>
+
+<ResponseField name="estat" type="string">
+  The updated planning status.
+</ResponseField>
+
+<ResponseField name="creador_id" type="integer">
+  ID of the trip's creator (unchanged).
+</ResponseField>
+
+<ResponseField name="maxim_participants" type="integer">
+  The updated maximum number of participants.
+</ResponseField>
+
+## Example
+
+```bash
+curl -X PUT http://localhost:8000/creadorViatges/creator/trips/5 \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "estat": "Actiu",
+    "maxim_participants": 10
+  }'
+```
+
+```json
+{
+  "id": 5,
+  "nom": "Costa Brava Weekend",
+  "desti": "Costa Brava",
+  "data_inici": "2026-08-15",
+  "data_fi": "2026-08-17",
+  "descripcio": "A relaxing weekend by the sea.",
+  "estat": "Actiu",
+  "creador_id": 2,
+  "maxim_participants": 10
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `401 Unauthorized` | `Token no vàlid` | The token is missing, malformed, or expired. |
+| `403 Forbidden` | `No tens permisos` | The user does not have the `Creador` or `Admin` role. |
+| `404 Not Found` | `Viatge no trobat o no ets el creador` | The trip does not exist, or the user is not the creator and is not an Admin. |

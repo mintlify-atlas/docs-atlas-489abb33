@@ -1,0 +1,79 @@
+---
+title: "Register"
+description: "Create a new TravelConnect user account."
+---
+
+## Endpoint
+
+`POST /auth/register`
+
+Creates a new user account with the `Viatger` role by default. Returns the created user object.
+
+## Authentication
+
+Not required.
+
+## Request
+
+Send a JSON body with the following fields:
+
+<ParamField body="email" type="string" required>
+  A valid, unique email address. Maximum 50 characters. Used as the login username.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password. Stored as a bcrypt hash.
+</ParamField>
+
+<ParamField body="full_name" type="string">
+  Optional display name. Maximum 50 characters.
+</ParamField>
+
+## Response
+
+Returns the newly created user object.
+
+<ResponseField name="id" type="integer">
+  Unique identifier for the new user.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  The user's email address.
+</ResponseField>
+
+<ResponseField name="full_name" type="string">
+  The user's display name, or `null` if not provided.
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  Always `"Viatger"` for newly registered users.
+</ResponseField>
+
+<ResponseField name="bio" type="string">
+  Always `null` for newly registered users.
+</ResponseField>
+
+## Example
+
+```bash
+curl -X POST http://localhost:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "alice@example.com", "password": "secret123", "full_name": "Alice"}'
+```
+
+```json
+{
+  "id": 1,
+  "email": "alice@example.com",
+  "full_name": "Alice",
+  "rol": "Viatger",
+  "bio": null
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `400 Bad Request` | `Email ya registrado` | An account with this email already exists. |
+| `422 Unprocessable Entity` | Validation error | The request body is missing required fields or contains an invalid email format. |

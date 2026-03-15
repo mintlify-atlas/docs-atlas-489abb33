@@ -1,0 +1,79 @@
+---
+title: "Get Chat Messages"
+description: "Retrieve all chat messages for a trip's group chat."
+---
+
+## Endpoint
+
+`GET /missatges/trips/{trip_id}/chat`
+
+Returns all messages posted in a trip's group chat, ordered by insertion. Each message includes the author's display name.
+
+## Authentication
+
+Not required.
+
+## Request
+
+<ParamField path="trip_id" type="integer" required>
+  The unique identifier of the trip whose chat messages are requested.
+</ParamField>
+
+## Response
+
+An array of message objects.
+
+<ResponseField name="id" type="integer">
+  The message's unique identifier.
+</ResponseField>
+
+<ResponseField name="contingut" type="string">
+  The text content of the message. Maximum 1000 characters.
+</ResponseField>
+
+<ResponseField name="viatge_xat" type="integer">
+  The ID of the trip this message belongs to.
+</ResponseField>
+
+<ResponseField name="autor_xat" type="integer">
+  The ID of the user who sent the message.
+</ResponseField>
+
+<ResponseField name="autor_nom" type="string">
+  The display name of the author (`full_name` if set, otherwise `email`). Defaults to `"Usuari"` if the author cannot be resolved.
+</ResponseField>
+
+<ResponseField name="timestamp" type="string">
+  ISO 8601 datetime of when the message was created.
+</ResponseField>
+
+## Example
+
+```bash
+curl http://localhost:8000/missatges/trips/1/chat
+```
+
+```json
+[
+  {
+    "id": 10,
+    "contingut": "Who is bringing the tent?",
+    "viatge_xat": 1,
+    "autor_xat": 3,
+    "autor_nom": "Bob",
+    "timestamp": "2026-06-10T14:32:00"
+  },
+  {
+    "id": 11,
+    "contingut": "I will!",
+    "viatge_xat": 1,
+    "autor_xat": 1,
+    "autor_nom": "Alice",
+    "timestamp": "2026-06-10T14:35:00"
+  }
+]
+```
+
+## Errors
+
+This endpoint does not return application-level errors under normal circumstances. An empty array is returned if no messages exist for the trip.

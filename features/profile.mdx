@@ -1,0 +1,82 @@
+---
+title: "Profile"
+description: "How to view and update your TravelConnect user profile."
+---
+
+Your profile stores your account information and is accessible at `/profile`. It shows your display name, email address, biography, and current role.
+
+## Profile fields
+
+| Field | DB column | Type | Description |
+|-------|-----------|------|-------------|
+| Email | `email` | string (max 50, unique) | Your login email address. Cannot be changed from the profile page. |
+| Full name | `full_name` | string (max 50) | Your display name shown across the platform. |
+| Biography | `bio` | string (max 200) | A short description of yourself. |
+| Role | `rol` | enum | Your current role: `Viatger`, `Creador`, or `Admin`. |
+
+<Note>
+  The `email` and `rol` fields cannot be changed from the profile page. Email is set at registration. Role changes require an Admin action.
+</Note>
+
+## Viewing your profile
+
+The profile page is located at `/profile`. It is a protected route — you must be logged in to access it.
+
+When the page loads, the `Perfil` component (`src/paginas/perfil.jsx`) calls:
+
+```
+GET /users/users/me
+```
+
+This returns your full user object from the backend. The page then displays:
+
+- Your **full name** and **role badge** in the card header
+- Your **email address**
+- Your **biography** (or the placeholder text `Sin biografía.` if none is set)
+- Your **current role**, shown as a color-coded badge:
+
+| Role | Badge color | Label shown |
+|------|-------------|-------------|
+| `Admin` | Red (danger) | Administrador |
+| `Creador` | Yellow (warning) | Creador |
+| `Viatger` | Blue (info) | Viajero |
+
+## Updating your profile
+
+You can update your **full name** and **biography** directly from the profile page.
+
+<Steps>
+  <Step title="Click Edit profile">
+    On the profile page, click the **Editar Perfil** button. The display view is replaced with an editable form containing a **Nombre Completo** text input and a **Biografía** textarea, pre-filled with your current values.
+  </Step>
+  <Step title="Edit your details">
+    Update your full name (required) and biography (optional) as needed. The `full_name` field is required — the form will not submit if it is empty.
+  </Step>
+  <Step title="Save changes">
+    Click **Guardar Cambios**. The frontend sends:
+
+    ```
+    PUT /users/users/me/{nom}/{bio}
+    ```
+
+    Where `{nom}` and `{bio}` are URL-encoded values of the new name and biography.
+  </Step>
+  <Step title="Confirm success">
+    On success, the form closes and the profile view updates immediately with your new name and biography. A browser alert confirms the change.
+  </Step>
+</Steps>
+
+<Tip>
+  Click **Cancelar** at any time to discard your edits and return to the read-only profile view without saving.
+</Tip>
+
+<Warning>
+  If the update request fails, a browser alert shows the error detail returned by the API. Your displayed profile is not changed until the request succeeds.
+</Warning>
+
+## API endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/users/users/me` | Retrieve the authenticated user's profile |
+| `PUT` | `/users/users/me/{nom}/{bio}` | Update the authenticated user's full name and bio |

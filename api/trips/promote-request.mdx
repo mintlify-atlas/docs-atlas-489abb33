@@ -1,0 +1,65 @@
+---
+title: "Submit Promotion Request"
+description: "Submit a request to be promoted from Viatger to Creador role."
+---
+
+## Endpoint
+
+`POST /viatge/promote-request`
+
+Allows an authenticated user to submit a promotion request to become a `Creador`. The request includes a message explaining why they want the promotion. An admin can then approve or deny it via the Admin endpoints.
+
+## Authentication
+
+Required. Send a valid Bearer token in the `Authorization` header.
+
+## Request
+
+<ParamField body="missatge" type="string" required>
+  A message explaining why the user wants to become a trip creator.
+</ParamField>
+
+## Response
+
+Returns the created promotion request object.
+
+<ResponseField name="id" type="integer">
+  The unique identifier of the promotion request.
+</ResponseField>
+
+<ResponseField name="missatge_peticio" type="string">
+  The message submitted with the request.
+</ResponseField>
+
+<ResponseField name="estat" type="string">
+  The current status of the request. Initially `pendent`.
+</ResponseField>
+
+<ResponseField name="usuari_solicitant" type="integer">
+  The ID of the user who submitted the request.
+</ResponseField>
+
+## Example
+
+```bash
+curl -X POST http://localhost:8000/viatge/promote-request \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"missatge": "I have organized 5 trips and want to list them on TravelConnect."}'
+```
+
+```json
+{
+  "id": 3,
+  "missatge_peticio": "I have organized 5 trips and want to list them on TravelConnect.",
+  "estat": "pendent",
+  "usuari_solicitant": 1
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `401 Unauthorized` | `Token no vàlid` | The token is missing, malformed, or expired. |
+| `422 Unprocessable Entity` | Validation error | The `missatge` field is missing from the request body. |

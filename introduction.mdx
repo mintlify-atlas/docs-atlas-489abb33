@@ -1,0 +1,71 @@
+---
+title: "Introduction"
+description: "TravelConnect — discover, join, and chat about trips with a community of travelers."
+---
+
+## What is TravelConnect?
+
+TravelConnect is a full-stack travel social platform where users can discover trips, join travel groups, and communicate with fellow travelers through built-in trip chat. It connects travelers with trip creators and provides administrators with the tools to manage the community.
+
+The platform is built with a **React + Vite** frontend and a **FastAPI** backend, using JWT-based authentication and a role-based permission system.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Set up TravelConnect locally and explore your first trip in minutes.
+  </Card>
+  <Card title="Core Features" icon="star" href="/features/trips">
+    Learn about trips, chat, roles, and profile management.
+  </Card>
+  <Card title="User Guides" icon="book" href="/guides/traveler">
+    Step-by-step guides for travelers, creators, and admins.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore all REST API endpoints with request/response details.
+  </Card>
+</CardGroup>
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Trip discovery" icon="map">
+    Browse all available trips and view full details including destination, dates, participant limits, and descriptions.
+  </Card>
+  <Card title="Trip enrollment" icon="user-plus">
+    Join trips with a single action. Leave at any time. Enrollment is tracked per user.
+  </Card>
+  <Card title="Trip chat" icon="comments">
+    Every trip has a dedicated chat room. Enrolled participants can send and read messages in real time.
+  </Card>
+  <Card title="Role-based access" icon="shield">
+    Three roles — Traveler, Creator, and Admin — control what actions each user can perform across the platform.
+  </Card>
+  <Card title="Trip creation" icon="plus">
+    Users with the Creator or Admin role can create and edit trips, setting destination, dates, capacity, and status.
+  </Card>
+  <Card title="Promotion requests" icon="arrow-up">
+    Travelers can submit a message requesting promotion to the Creator role. Admins review and approve requests.
+  </Card>
+</CardGroup>
+
+## Architecture overview
+
+TravelConnect is structured as a monorepo with two top-level directories:
+
+| Directory | Stack | Purpose |
+|-----------|-------|---------|
+| `Backend/` | Python, FastAPI, SQLAlchemy | REST API, database models, authentication |
+| `FrontEnd/` | React 19, Vite, React Router v7 | Single-page application |
+
+The backend exposes a REST API on port `8000`. The frontend dev server runs on port `5173` and proxies API calls to the backend.
+
+## User roles
+
+| Role | Catalan name | Capabilities |
+|------|-------------|--------------|
+| Traveler | Viatger | Browse trips, enroll/leave, chat, view profile, request promotion |
+| Creator | Creador | All Traveler actions + create and edit their own trips |
+| Admin | Admin | All Creator actions + manage all trips + manage users and promotion requests |
+
+<Note>
+  New accounts default to the **Traveler** role. Promotion to Creator requires submitting a request that an Admin approves.
+</Note>

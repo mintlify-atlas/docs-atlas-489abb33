@@ -1,0 +1,68 @@
+---
+title: "Update Promotion Request"
+description: "Approve or deny a user's creator promotion request."
+---
+
+## Endpoint
+
+`PUT /admin/promotions/{user_id}`
+
+Updates the status of a promotion request for the given user. Administrators use this to approve (`aprovat`) or deny (`denegat`) pending requests.
+
+## Authentication
+
+No authentication enforced at the route level.
+
+## Request
+
+<ParamField path="user_id" type="integer" required>
+  The ID of the user whose promotion request should be updated.
+</ParamField>
+
+<ParamField body="new_estado" type="string" required>
+  The new status to set. One of `pendent`, `aprovat`, or `denegat`.
+</ParamField>
+
+## Response
+
+Returns the updated promotion request object.
+
+<ResponseField name="id" type="integer">
+  The promotion request's unique identifier.
+</ResponseField>
+
+<ResponseField name="missatge_peticio" type="string">
+  The message submitted by the user.
+</ResponseField>
+
+<ResponseField name="estat" type="string">
+  The updated status: `pendent`, `aprovat`, or `denegat`.
+</ResponseField>
+
+<ResponseField name="usuari_solicitant" type="integer">
+  The ID of the user who submitted the request.
+</ResponseField>
+
+## Example
+
+```bash
+curl -X PUT http://localhost:8000/admin/promotions/1 \
+  -H "Content-Type: application/json" \
+  -d '{"new_estado": "aprovat"}'
+```
+
+```json
+{
+  "id": 1,
+  "missatge_peticio": "I have organized 5 trips and want to list them on TravelConnect.",
+  "estat": "aprovat",
+  "usuari_solicitant": 1
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `404 Not Found` | `Promocion no encontrada` | No promotion request exists for the given `user_id`. |
+| `422 Unprocessable Entity` | Validation error | The `new_estado` field is missing from the request body. |

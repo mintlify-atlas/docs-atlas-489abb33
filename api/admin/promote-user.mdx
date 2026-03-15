@@ -1,0 +1,77 @@
+---
+title: "Promote User"
+description: "Change the role of a user by their ID."
+---
+
+## Endpoint
+
+`PUT /admin/users/{user_id}/promote`
+
+Updates the role of the specified user. Used by administrators to promote users to `Creador` or `Admin`, or to demote them back to `Viatger`.
+
+## Authentication
+
+No authentication enforced at the route level.
+
+<Warning>
+  This endpoint can grant `Admin` privileges. It should be protected at the infrastructure level in production deployments.
+</Warning>
+
+## Request
+
+<ParamField path="user_id" type="integer" required>
+  The unique identifier of the user whose role should be changed.
+</ParamField>
+
+<ParamField body="new_rol" type="string" required>
+  The role to assign to the user. One of `Viatger`, `Creador`, or `Admin`.
+</ParamField>
+
+## Response
+
+Returns the updated user object.
+
+<ResponseField name="id" type="integer">
+  The user's unique identifier.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  The user's email address.
+</ResponseField>
+
+<ResponseField name="full_name" type="string">
+  The user's display name.
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  The user's new role.
+</ResponseField>
+
+<ResponseField name="bio" type="string">
+  The user's biography.
+</ResponseField>
+
+## Example
+
+```bash
+curl -X PUT http://localhost:8000/admin/users/1/promote \
+  -H "Content-Type: application/json" \
+  -d '{"new_rol": "Creador"}'
+```
+
+```json
+{
+  "id": 1,
+  "email": "alice@example.com",
+  "full_name": "Alice",
+  "rol": "Creador",
+  "bio": null
+}
+```
+
+## Errors
+
+| Status | Detail | Description |
+|--------|--------|-------------|
+| `404 Not Found` | `Usuario no encontrado` | No user exists with the given `user_id`. |
+| `422 Unprocessable Entity` | Validation error | The `new_rol` field is missing from the request body. |
